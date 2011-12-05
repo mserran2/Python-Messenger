@@ -77,18 +77,31 @@ def manage(socket,size):
 
           else:
             data = s.recv(size)
-            if data[0:4] == "NRQ:":
-              print "New chat request from " + data[4:]
-              print "Do you accept?"
-              if getYorN():
-                startChat(s,size)
-              else:
-                s.send("DEN:")
+            if data:
+              if data[0:4] == "NRQ:":
+                print "New chat request from " + data[4:]
+                print "Do you accept?"
+                if getYorN():
+                  s.send("ACP:")
+                  startChat(s,size,data[4:])
+                else:
+                  s.send("DEN:")
+              elif data[0:4] == "RST:":
+                print "Request Sent"
+              elif data[0:4] == "RAC:":
+                print "Request Accepted"
+                startChat(s,size,data[4:])
+              elif data[0:4] == "RDE:":
+                print "Request Denied"
+            else:
+              print "Connection dropped by server. Exiting"
+              quit()
                 
-def startChat(sock,size):
-  sock.send("ACP:")
+def startChat(sock,size,name):
+  print "IN CHAT MODE"
   input = [sock,sys.stdin]
-  while True:
+  status = True
+  while status:
       #blocks until one of these inputs has an input event
       inputready,outputready,exceptready = select.select(input,[],[]) 
       for s in inputready:
@@ -97,7 +110,7 @@ def startChat(sock,size):
               # handle standard input
               opt = sys.stdin.readline()
               opt = opt.strip()
-              socket.send(opt)
+              sock.send(opt)
               """
               if checkValid(opt):
                 opt = int(opt)
@@ -112,17 +125,13 @@ def startChat(sock,size):
 
           else:
             data = s.recv(size)
-            print data
-            """
-            if data[0:4] == "NRQ:":
-              print "New chat request from " + data[4:]
-              print "Do you accept?"
-              if getYorN():
-                startChat(s,size)
-              else:
-                s.send("DEN:")
-            """
-  
+            if data:
+              print name + ": " + data
+            else:
+              print "Connection Terminated"
+              quit()
+              
+
 
       
 def getYorN():

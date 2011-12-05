@@ -4,8 +4,7 @@ import socket
 import sys
 from time import sleep
 
-def signIn(s,nn,av,avr,size): #nn nonage av available
-  data = s.recv(size)
+def signIn(s,nn,av,avr,size,data): #nn noname av available
   name = data[4:]
   if data[0:4] == "NME:":
     if name in av:
@@ -20,20 +19,25 @@ def signIn(s,nn,av,avr,size): #nn nonage av available
   	s.close()
   	nn.remove(s)
 
-def makeConnection(s1,pd,av,avr,size):
-  reps = s1.recv(size)
+def makeConnection(s1,pd,av,avr,size,reps):
   if reps[0:4] == "ACP:":
-    pd[s1].send("Request Accepted")
+    pd[s1].send("RAC:"+avr[s1])
+    s2 = pd[s1]
+    # deletes user 1 from available list
     del av[avr[s1]]
     del avr[s1]
-    s2 = pd[s1]
+    # deletes user 2 from available list
+    del av[avr[s2]]
+    del avr[s2]
+    # deletes entry in pending connections list
     del pd[s1]
+    # Spins thread off for convo
     p = Process(target=chatRoom, args=(s1, s2, size))
     #processes.append(p)
     p.start()
     #start thread here
   else:
-    pd[s1].send("Request Denied")
+    pd[s1].send("RDE:")
     del pd[s1]
     
 
@@ -44,30 +48,16 @@ def chatRoom(s1,s2,size):
       inputready,outputready,exceptready = select.select(input,[],[]) 
 
       for s in inputready:
-        if s == s1:
-          s1.send(s.recv(size))
+        data = s.recv(size)
+        if data:
+          if s == s1:
+            s2.send(data)
+          else:
+            s1.send(data)
         else:
-          s2.send(s.recv(size))
-  
-
-def connection(client, address,conn):
-  running = 1
-  while running:
-    data = client.recv(1024)
-    if data:
-      if data[0:3] == "SND":
-        for addr in conn.recv():
-          if addr != client:
-            addr.send(data[3:])
-        client.send("Message Sent\n")
-      elif data[0:3] == "WHO":
-        client.send(str(clients))
-      #elif data [0:4] == "CLR":
-      #  asd
-    else:
-      client.close()
-      clients.removeClient(client)
-      running = 0
+         s1.close()
+         s2.close()
+         return
 
 
 def getAvail(dict,socket):
@@ -77,8 +67,7 @@ def getAvail(dict,socket):
      s += i + ":"
   return s[:-1]
   
-def manage(s,available,ava_reverse,pending,size):
-  data = s.recv(size)
+def manage(s,available,ava_reverse,pending,size,data):
   if data[0:4] == "QUE:":
     print "Available Users Sent!"
     s.send(getAvail(available,s))
@@ -138,13 +127,14 @@ def main():
 
           else:
               # handle all other sockets
-              if s in noname:
-                print "SignIn started"
-                signIn(s,noname,available,ava_reverse,size)
-              elif s in pending:
-                makeConnection(s, pending, available, ava_reverse,size)
-              elif s in available.values():
-                manage(s,available,ava_reverse,pending,size)
+              data = s.recv(size)
+              if data:
+                if s in noname:
+                  signIn(s,noname,available,ava_reverse,size,data)
+                elif s in pending:
+                  makeConnection(s, pending, available, ava_reverse,size,data)
+                elif s in available.values():
+                  manage(s,available,ava_reverse,pending,size,data)
               else:
                 s.close()
                   
