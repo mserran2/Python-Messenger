@@ -1,7 +1,6 @@
-#!/usr/bin/env python
-
 """
-A simple echo client
+Author: Mark Serrano
+Python Messenger Client
 """
 
 import socket
@@ -41,13 +40,8 @@ def checkUsers(socket,size):
         socket.send(msg)
     else:
       print "Invalid Choice"
-    
-      
   else:
     print "NO USERS AVAILABLE"
-
-#def selectUser(socket,size):
-  
 
 def manage(socket,size):
   input = [socket,sys.stdin]
@@ -55,8 +49,6 @@ def manage(socket,size):
       print "***********************************\n", \
         "Please Choose from the following options: \n", \
         "1. Start a new chat \n2. QUIT"
-      #opt = getValid()
-      #while True:
       #blocks until one of these inputs has an input event
       inputready,outputready,exceptready = select.select(input,[],[]) 
       for s in inputready:
@@ -111,18 +103,6 @@ def startChat(sock,size,name):
               opt = sys.stdin.readline()
               opt = opt.strip()
               sock.send(opt)
-              """
-              if checkValid(opt):
-                opt = int(opt)
-                if opt == 1:
-                  checkUsers(socket,size)
-                  break
-                elif opt == 2:
-                  quit()
-              else:
-                print "Invalid input!"
-              """
-
           else:
             data = s.recv(size)
             if data:
@@ -131,9 +111,6 @@ def startChat(sock,size,name):
               print "Connection Terminated"
               quit()
               
-
-
-      
 def getYorN():
   while True:
     usr = raw_input("Yes or No?")
@@ -150,12 +127,6 @@ def checkValid(opt):
     return True
   return False
 
-def getValid():
-  while True:
-    opt = raw_input("Enter option between 1 and 3: ")
-    if opt.isdigit() and int(opt) > 0 and int(opt) < 4:
-      return int(opt)
-
 def main():
   host = ''#'sage.cs.swarthmore.edu'
   port = 50000
@@ -163,6 +134,5 @@ def main():
   s = connect(host,port,size)
   manage(s,size)
   s.close()
-  print 'Received:', data
 
 main()

@@ -1,10 +1,18 @@
+"""
+Author: Mark Serrano
+Python Messenger server
+"""
+
 from multiprocessing import Process, Pipe
 import select
 import socket
 import sys
 from time import sleep
 
-def signIn(s,nn,av,avr,size,data): #nn noname av available
+def signIn(s,db,size,data): #nn noname av available
+  nn = db[0]
+  av = db[2]
+  avr = db[3]
   name = data[4:]
   if data[0:4] == "NME:":
     if name in av:
@@ -19,7 +27,10 @@ def signIn(s,nn,av,avr,size,data): #nn noname av available
   	s.close()
   	nn.remove(s)
 
-def makeConnection(s1,pd,av,avr,size,reps):
+def makeConnection(s1,db,size,reps):
+  pd = db[1]
+  av = db[2]
+  avr = db[3]
   if reps[0:4] == "ACP:":
     pd[s1].send("RAC:"+avr[s1])
     s2 = pd[s1]
@@ -67,16 +78,16 @@ def getAvail(dict,socket):
      s += i + ":"
   return s[:-1]
   
-def manage(s,available,ava_reverse,pending,size,data):
+def manage(s,db,size,data):
   if data[0:4] == "QUE:":
     print "Available Users Sent!"
-    s.send(getAvail(available,s))
+    s.send(getAvail(db[2],s))
   if data[0:4] == "REQ:":
-    if data[4:] in available:
-      pending[available[data[4:]]] = s
+    if data[4:] in db[2]:
+      db[1][db[2][data[4:]]] = s
       s.send("RST")
-      name = str(ava_reverse[s])
-      available[data[4:]].send("NRQ:"+name)
+      name = str(db[3][s])
+      db[2][data[4:]].send("NRQ:"+name)
     
     
 
@@ -105,6 +116,7 @@ def main():
   pending = {}
   available = {}
   ava_reverse = {}
+  database = [noname,pending,available,ava_reverse]
 
   input = [server,sys.stdin]
   clients_list = []
@@ -118,7 +130,7 @@ def main():
           if s == server:
               # handle the server socket
               client, address = server.accept()
-              noname.append(client)
+              database[0].append(client)
 
           elif s == sys.stdin:
               # handle standard input
@@ -130,11 +142,11 @@ def main():
               data = s.recv(size)
               if data:
                 if s in noname:
-                  signIn(s,noname,available,ava_reverse,size,data)
+                  signIn(s,database,size,data)
                 elif s in pending:
-                  makeConnection(s, pending, available, ava_reverse,size,data)
+                  makeConnection(s,database,size,data)
                 elif s in available.values():
-                  manage(s,available,ava_reverse,pending,size,data)
+                  manage(s,database,size,data)
               else:
                 s.close()
                   
