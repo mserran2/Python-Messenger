@@ -80,7 +80,49 @@ def manage(socket,size):
             if data[0:4] == "NRQ:":
               print "New chat request from " + data[4:]
               print "Do you accept?"
-              if getYorN()
+              if getYorN():
+                startChat(s,size)
+              else:
+                s.send("DEN:")
+                
+def startChat(sock,size):
+  sock.send("ACP:")
+  input = [sock,sys.stdin]
+  while True:
+      #blocks until one of these inputs has an input event
+      inputready,outputready,exceptready = select.select(input,[],[]) 
+      for s in inputready:
+
+          if s == sys.stdin:
+              # handle standard input
+              opt = sys.stdin.readline()
+              opt = opt.strip()
+              socket.send(opt)
+              """
+              if checkValid(opt):
+                opt = int(opt)
+                if opt == 1:
+                  checkUsers(socket,size)
+                  break
+                elif opt == 2:
+                  quit()
+              else:
+                print "Invalid input!"
+              """
+
+          else:
+            data = s.recv(size)
+            print data
+            """
+            if data[0:4] == "NRQ:":
+              print "New chat request from " + data[4:]
+              print "Do you accept?"
+              if getYorN():
+                startChat(s,size)
+              else:
+                s.send("DEN:")
+            """
+  
 
       
 def getYorN():
@@ -89,7 +131,7 @@ def getYorN():
     usr = usr.lower().strip()
     if usr == "y" or usr == "yes":
       return True
-    elif use == "n" or use == "no":
+    elif usr == "n" or usr == "no":
       return False
     else:
       print "invalid choice"

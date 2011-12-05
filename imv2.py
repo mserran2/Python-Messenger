@@ -24,13 +24,30 @@ def makeConnection(s1,pd,av,avr,size):
   reps = s1.recv(size)
   if reps[0:4] == "ACP:":
     pd[s1].send("Request Accepted")
-    del av[avr[s]]
-    del avr[s]
+    del av[avr[s1]]
+    del avr[s1]
+    s2 = pd[s1]
+    del pd[s1]
+    p = Process(target=chatRoom, args=(s1, s2, size))
+    #processes.append(p)
+    p.start()
     #start thread here
   else:
     pd[s1].send("Request Denied")
     del pd[s1]
     
+
+def chatRoom(s1,s2,size):
+  input = [s1,s2]
+  while True:
+      #blocks until one of these inputs has an input event
+      inputready,outputready,exceptready = select.select(input,[],[]) 
+
+      for s in inputready:
+        if s == s1:
+          s1.send(s.recv(size))
+        else:
+          s2.send(s.recv(size))
   
 
 def connection(client, address,conn):
